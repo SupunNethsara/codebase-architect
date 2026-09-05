@@ -74,4 +74,14 @@ public class RepositoryEntity {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    /**
+     * Entity එක persist වීමට පෙර createdAt set කර නොමැති නම් වත්මන් වේලාව ලබාදීම (JPA Lifecycle Hook).
+     */
+    @jakarta.persistence.PrePersist
+    protected void onCreate() {
+        if (createdAt == null) {
+            createdAt = OffsetDateTime.now();
+        }
+    }
 }
