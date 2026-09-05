@@ -34,3 +34,51 @@ Understanding legacy systems, unfamiliar microservices, or large open-source rep
 ---
 
 ## 🏗️ System Architecture
+[ GitHub Repo URL ]
+│
+▼
+[ Spring Boot Core ] ── JGit Shallow Clone (depth=1)
+│
+▼
+[ AST Pruning & Filtering Engine ] ── Removes node_modules, build artifacts, tests
+│
+▼
+[ Google Gemini 1.5 API ] ── Strict JSON Schema Output
+│
+▼
+[ Dagre Layout Engine ] ── Coordinates (x, y) Calculation
+│
+▼
+[ React Flow Canvas ] ⟷ [ Embedded Monaco Editor ]
+│
+▼
+[ Contextual Code Chat ] ── Dynamic Path Highlighting & Animation
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Purpose |
+| :--- | :--- | :--- |
+| **Frontend UI** | React 18, Vite, Tailwind CSS | High-performance, modular UI shell |
+| **Canvas Engine** | React Flow (`@xyflow/react`) | Custom SVG nodes, bezier edges, minimap, zoom/pan |
+| **Source Viewer** | Monaco Editor | In-browser VS Code syntax highlighting & line focus |
+| **Backend Core** | Java 21, Spring Boot 3.3+ | Project Loom Virtual Threads, REST APIs, task orchestration |
+| **Code Parser** | JGit, JavaParser / Tree-sitter | Shallow repository cloning, AST extraction, filtering |
+| **AI Engine** | Google Gemini 1.5 Pro / Flash | Large-context architectural synthesis with JSON Schema enforcement |
+| **Database & Cache** | PostgreSQL 16 + Redis | Snapshot persistence, chat sessions, asynchronous task queues |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+* **Java 21** or later
+* **Node.js 20+** & **npm** / **pnpm**
+* **Docker & Docker Compose**
+* **Google Gemini API Key** ([Get one here](https://aistudio.google.com/))
+
+---
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/SupunNethsara/codebase-architect)
+cd codebase-architect
