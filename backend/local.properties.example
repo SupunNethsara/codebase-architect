@@ -1,0 +1,2 @@
+# Meke copy ekak "local.properties" kiyana namin hadala, obage values dhaanna.
+spring.datasource.password=your-postgres-password
