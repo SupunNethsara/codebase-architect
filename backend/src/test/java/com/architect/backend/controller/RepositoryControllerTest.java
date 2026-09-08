@@ -42,6 +42,9 @@ class RepositoryControllerTest {
     @Mock
     private RepositoryService repositoryService;
 
+    @Mock
+    private com.architect.backend.service.CodebaseAnalysisService analysisService;
+
     @InjectMocks
     private RepositoryController repositoryController;
 
@@ -174,5 +177,48 @@ class RepositoryControllerTest {
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].repoUrl").value("https://github.com/user/repo-1"))
                 .andExpect(jsonPath("$[1].repoUrl").value("https://github.com/user/repo-2"));
+    }
+
+    @Test
+    @DisplayName("POST /api/v1/repositories/{id}/analyze - 202 ACCEPTED සහ background parsing message ලැබිය යුතුය")
+    void shouldTriggerAnalysisAndReturn202() throws Exception {
+        UUID repoId = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/v1/repositories/{id}/analyze", repoId))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.repositoryId").value(repoId.toString()))
+                .andExpect(jsonPath("$.status").value("PARSING"))
+                .andExpect(jsonPath("$.message").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/repositories/{id}/snapshot - Snapshot එකක් ඇති විට 200 OK සහ graph data ලැබිය යුතුය")
+    void shouldGetSnapshotAndReturn200() throws Exception {
+        UUID repoId = UUID.randomUUID();
+        com.architect.backend.dto.ArchitectureGraphDto graph = new com.architect.backend.dto.ArchitectureGraphDto(
+                "Overview",
+                "Layered",
+                List.of(new com.architect.backend.dto.ArchitectureNodeDto("n1", "controllerNode", "Ctrl", "Ctrl.java", 1, "desc", "API")),
+                List.of()
+        );
+
+        when(analysisService.getLatestSnapshot(repoId)).thenReturn(java.util.Optional.of(graph));
+
+        mockMvc.perform(get("/api/v1/repositories/{id}/snapshot", repoId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.summary").value("Overview"))
+                .andExpect(jsonPath("$.architecturePattern").value("Layered"))
+                .andExpect(jsonPath("$.nodes[0].id").value("n1"));
+    }
+
+    @Test
+    @DisplayName("GET /api/v1/repositories/{id}/snapshot - Snapshot එකක් නොමැති විට 404 NOT_FOUND ලැබිය යුතුය")
+    void shouldReturn404WhenSnapshotNotFound() throws Exception {
+        UUID repoId = UUID.randomUUID();
+        when(analysisService.getLatestSnapshot(repoId)).thenReturn(java.util.Optional.empty());
+
+        mockMvc.perform(get("/api/v1/repositories/{id}/snapshot", repoId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error").value("NOT_FOUND"));
     }
 }
