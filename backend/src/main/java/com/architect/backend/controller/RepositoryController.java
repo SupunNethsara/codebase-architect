@@ -30,12 +30,18 @@ import lombok.RequiredArgsConstructor;
  * 3. @Valid: Request body එකේ data (DTO annotations) validate කිරීමට භාවිතා කරයි.
  * 4. @RequiredArgsConstructor: RepositoryService එක Constructor Injection මඟින් inject කරගැනීමට.
  */
+import java.util.Map;
+import com.architect.backend.dto.ArchitectureGraphDto;
+import com.architect.backend.exception.ResourceNotFoundException;
+import com.architect.backend.service.CodebaseAnalysisService;
+
 @RestController
 @RequestMapping("/api/v1/repositories")
 @RequiredArgsConstructor
 public class RepositoryController {
 
     private final RepositoryService repositoryService;
+    private final CodebaseAnalysisService analysisService;
 
     /**
      * අලුත් Repository එකක් create කිරීම.
@@ -71,5 +77,32 @@ public class RepositoryController {
             @RequestParam UUID userId) {
         List<RepositoryResponse> responses = repositoryService.getRepositoriesByUserId(userId);
         return ResponseEntity.ok(responses);
+    }
+
+    /**
+     * Repository එකක් Asynchronously Background එකේ Analyze කිරීම ආරම්භ කිරීම.
+     * POST /api/v1/repositories/{id}/analyze
+     * Status: 202 ACCEPTED (Background task started on Virtual Thread)
+     */
+    @PostMapping("/{id}/analyze")
+    public ResponseEntity<Map<String, Object>> triggerAnalysis(@PathVariable UUID id) {
+        analysisService.triggerAnalysis(id);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(
+                "repositoryId", id,
+                "status", "PARSING",
+                "message", "Repository analysis pipeline started in background on a Virtual Thread"
+        ));
+    }
+
+    /**
+     * Repository එක සඳහා සාදන ලද Architecture Snapshot එක (React Flow Graph) ලබාගැනීම.
+     * GET /api/v1/repositories/{id}/snapshot
+     * Status: 200 OK (නැතහොත් 404 NOT_FOUND)
+     */
+    @GetMapping("/{id}/snapshot")
+    public ResponseEntity<ArchitectureGraphDto> getSnapshot(@PathVariable UUID id) {
+        ArchitectureGraphDto snapshot = analysisService.getLatestSnapshot(id)
+                .orElseThrow(() -> new ResourceNotFoundException("No architectural snapshot found for repository ID: " + id));
+        return ResponseEntity.ok(snapshot);
     }
 }
