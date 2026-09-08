@@ -81,10 +81,10 @@ public class RepositoryController {
 
     /**
      * Repository එකක් Asynchronously Background එකේ Analyze කිරීම ආරම්භ කිරීම.
-     * POST /api/v1/repositories/{id}/analyze
+     * POST /api/v1/repositories/{id}/analyze (හෝ Browser direct test සඳහා GET)
      * Status: 202 ACCEPTED (Background task started on Virtual Thread)
      */
-    @PostMapping("/{id}/analyze")
+    @RequestMapping(value = "/{id}/analyze", method = {org.springframework.web.bind.annotation.RequestMethod.POST, org.springframework.web.bind.annotation.RequestMethod.GET})
     public ResponseEntity<Map<String, Object>> triggerAnalysis(@PathVariable UUID id) {
         analysisService.triggerAnalysis(id);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(Map.of(

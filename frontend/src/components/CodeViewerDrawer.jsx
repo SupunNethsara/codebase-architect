@@ -33,12 +33,16 @@ const CodeViewerDrawer = ({ isOpen, onClose, selectedNode }) => {
     }
   };
 
+  const safePackage = selectedNode.filePath
+    ? selectedNode.filePath.split('/').slice(0, -1).join('.')
+    : 'com.architect';
+
   // Sample code representation for demonstration / when viewing node
   const sampleCode = `// File: ${selectedNode.filePath}
 // Architectural Role: ${selectedNode.label} (${selectedNode.tier})
 // Starting Line: ${selectedNode.startLine}
 
-package ${selectedNode.filePath?.replace(/\\//g, '.').replace(/\\.[^/.]+$/, '') || 'com.architect'};
+package ${safePackage || 'com.architect'};
 
 import org.springframework.stereotype.*;
 import java.util.*;
