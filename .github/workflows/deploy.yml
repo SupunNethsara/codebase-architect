@@ -1,0 +1,91 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "Development" ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Run Tests & Build Validation (CI)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # --- Backend Validation ---
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
+
+      - name: Run Backend Unit Tests
+        working-directory: ./backend
+        run: |
+          chmod +x mvnw
+          ./mvnw test "-Dtest=RepositoryDtoTest,RepositoryServiceTest,RepositoryControllerTest"
+
+      # --- Frontend Validation ---
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Frontend
+        working-directory: ./frontend
+        run: |
+          npm ci
+          npm run build
+
+  deploy:
+    name: Deploy to AWS EC2 via SSH (CD)
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/Development'
+
+    steps:
+      - name: Execute Remote Deployment via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            set -e
+            echo "=========================================="
+            echo "🚀 Starting Automated Deployment on EC2"
+            echo "=========================================="
+            
+            # 1. Project Directory එකට පිවිසීම
+            cd ~/codebase-architect
+            
+            # 2. Latest code ලබා ගැනීම
+            echo "📥 Pulling latest changes from branch: ${{ github.ref_name }}..."
+            git fetch origin
+            git checkout ${{ github.ref_name }}
+            git pull origin ${{ github.ref_name }}
+            
+            # 3. .env file එක තිබේදැයි පරීක්ෂා කිරීම (නැතිනම් default example එකෙන් සෑදීම)
+            if [ ! -f .env ]; then
+              echo "⚠️ .env file not found. Creating from .env.example..."
+              cp .env.example .env
+            fi
+            
+            # 4. Containers Rebuild කර Background එකේ run කිරීම
+            echo "🐳 Building and starting Docker containers..."
+            docker compose down
+            docker compose up -d --build
+            
+            # 5. Disk space ඉතිරි කරගැනීමට පැරණි unused images ඉවත් කිරීම
+            echo "🧹 Cleaning up unused Docker images..."
+            docker image prune -f
+            
+            echo "=========================================="
+            echo "✅ Deployment Completed Successfully!"
+            echo "=========================================="
