@@ -7,33 +7,29 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-codebase_architect}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Admin123}
-    ports:
-      - "127.0.0.1:5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - codebase_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-codebase_architect}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - codebase_network
 
   redis:
     image: redis:7-alpine
     container_name: codebase_redis
     restart: always
-    ports:
-      - "127.0.0.1:6379:6379"
     volumes:
-      - redis_data:/data
+      - codebase_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
-      - app-network
+      - codebase_network
 
   backend:
     build:
@@ -54,7 +50,7 @@ services:
       SPRING_DATA_REDIS_PORT: 6379
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     networks:
-      - app-network
+      - codebase_network
 
   frontend:
     build:
@@ -63,16 +59,17 @@ services:
     container_name: codebase_frontend
     restart: always
     ports:
-      - "80:80"
+      # Port 80 rag-engine එකට ඉතිරි කර codebase-architect Port 3000 ට map කිරීම
+      - "${FRONTEND_PORT:-3000}:80"
     depends_on:
       - backend
     networks:
-      - app-network
+      - codebase_network
 
 volumes:
-  postgres_data:
-  redis_data:
+  codebase_postgres_data:
+  codebase_redis_data:
 
 networks:
-  app-network:
+  codebase_network:
     driver: bridge
