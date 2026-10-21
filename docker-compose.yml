@@ -59,8 +59,8 @@ services:
     container_name: codebase_frontend
     restart: always
     ports:
-      # Port 80 rag-engine එකට ඉතිරි කර codebase-architect Port 3000 ට map කිරීම
-      - "${FRONTEND_PORT:-3000}:80"
+      # Port 80 is completely free on the EC2 host (rag-engine uses 3000, 8080, 5432, 11434)
+      - "${FRONTEND_PORT:-80}:80"
     depends_on:
       - backend
     networks:
